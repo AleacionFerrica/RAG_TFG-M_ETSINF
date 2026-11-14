@@ -4,9 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This repository is at its very start: there is no source code, build system, dependencies, or tests yet. Based on the repo name (`RAG_TFG-M_ETSINF`), the goal is a Retrieval-Augmented Generation (RAG) system over the regulations and procedures for the TFG/TFM (Trabajo Fin de Grado / Trabajo Fin de Máster, the bachelor's and master's final projects) at ETSINF (Escuela Técnica Superior de Ingeniería Informática, UPV). The language, framework, embedding model, vector store and LLM provider have not been chosen yet. Don't assume any of them; ask, or follow what the code establishes once it exists.
+RAG over the TFG/TFM regulations of ETSINF (Valencia) and EPSA (Alcoy), UPV. Python, everything local: `BAAI/bge-m3` embeddings, BM25 + dense hybrid with RRF, `BAAI/bge-reranker-v2-m3` reranker, LLM via Ollama (`MODEL` in `ask.py`). No cloud LLM APIs.
 
-Update this file with build/test/run commands and architecture notes once code is added.
+## Commands (use the venv: `.RAGenv\Scripts\python`)
+- `python ingest.py` → `data/chunks.jsonl` (PDF → chunks + metadata `META`: escuela, campus, curso)
+- `python index.py` → `data/embeddings.npy`. Re-run after every ingest; the chunk count must match.
+- `python ask.py` interactive chat (`/campus alcoy|valencia|todos`, `/salir`); `python ask.py <pregunta>` answers once
+- `python evaluate.py` retrieval (Hit@5, MRR); `--respuestas` adds LLM answer metrics; `--ablacion` compares the `MODES` in `retrieve.py`
+
+## Architecture
+- `retrieve.py`: `retrieve(query, k, campus, mode)`. `campus` filters to that campus + "Ambos"; `detect_campus()` infers it from the question.
+- `ask.py`: `ask()` auto-detects campus and returns `NO_ANSWER` without calling the LLM when the top rerank score < `MIN_SCORE`.
+- `eval/preguntas.csv`: `respuesta_esperada` = key facts separated by `;`, `a|b` for variants; empty source/answer = unanswerable question.
 
 ## Corpus
 

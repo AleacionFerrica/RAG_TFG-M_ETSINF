@@ -25,20 +25,38 @@ def resources():
     bm25 = BM25Okapi([tokenize(embed_text(c)) for c in chunks])
     return chunks, bm25, np.load(VECTORS), SentenceTransformer(EMBED_MODEL), CrossEncoder(RERANK_MODEL)
 
-def retrieve(query: str, k: int = 5):
-    chunks, bm25, vectors, embedder, reranker = resources()
+MODES = ("bm25", "dense", "hybrid", "hybrid+rerank")
 
-    # 1. Dos rankings independientes sobre todos los fragmentos
-    lexical = np.argsort(-bm25.get_scores(tokenize(query)))
+
+def detect_campus(question: str) -> str | None:
+    words = set(tokenize(question))
+    if words & {"alcoy", "alcoi", "epsa"}:
+        return "Alcoy"
+    if words & {"valencia", "etsinf", "vera"}:
+        return "Valencia"
+    return None
+
+
+def retrieve(query: str, k: int = 5, campus: str | None = None, mode: str = "hybrid+rerank"):
+    """campus="Alcoy" o "Valencia" limita a ese campus más los documentos comunes ("Ambos").
+    mode elige el método de recuperación (ver MODES); los otros modos sirven para la ablación."""
+    chunks, bm25, vectors, embedder, reranker = resources()
+    allowed = np.array([campus is None or c.get("campus") in (campus, "Ambos") for c in chunks])
+
+    # 1. Dos rankings independientes sobre los fragmentos permitidos
+    lexical = np.argsort(-np.where(allowed, bm25.get_scores(tokenize(query)), -np.inf))
     q = embedder.encode(query, normalize_embeddings=True)
-    semantic = np.argsort(-(vectors @ q))
+    semantic = np.argsort(-np.where(allowed, vectors @ q, -np.inf))
 
     # 2. Fusión RRF: premia lo que sale arriba en cualquiera de los dos
     rrf: dict[int, float] = {}
-    for ranking in (lexical, semantic):
-        for rank, idx in enumerate(ranking[:CANDIDATES]):
+    rankings = {"bm25": (lexical,), "dense": (semantic,)}.get(mode, (lexical, semantic))
+    for ranking in rankings:
+        for rank, idx in enumerate(r for r in ranking[:CANDIDATES] if allowed[r]):
             rrf[int(idx)] = rrf.get(int(idx), 0.0) + 1 / (RRF_K + rank + 1)
     candidates = sorted(rrf, key=lambda i: rrf[i], reverse=True)[:CANDIDATES]
+    if mode != "hybrid+rerank":  # con un solo ranking, RRF conserva su orden
+        return [{**chunks[i], "score": rrf[i]} for i in candidates[:k]]
 
     # 3. El cross-encoder lee pregunta y fragmento juntos y puntúa de nuevo
     scores = reranker.predict([(query, chunks[i]["text"]) for i in candidates])
