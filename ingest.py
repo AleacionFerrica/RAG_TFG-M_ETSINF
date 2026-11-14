@@ -8,17 +8,17 @@ import pymupdf4llm
 
 DOCS = Path("documents")
 OUT = Path("data/chunks.jsonl")
-MAX_CHARS = 2000    # Alrededor de 250 tokens por fragmento
+MAX_CHARS = 1000    # Alrededor de 250 tokens por fragmento
 
 META = {
-    "Calendario-de-gestion-TFG-TFM-2026-27-v1.pdf": {"escuela": "EPSA", "curso": "2026-27"},
-    "Fechas-Importantes-TFG-2026-2027.pdf": {"escuela": "ETSINF", "curso": "2026-27"},
+    "Calendario-de-gestion-TFG-TFM-2026-27-v1.pdf": {"escuela": "EPSA (Alcoy)", "curso": "2026-27"},
+    "Fechas-Importantes-TFG-2026-2027.pdf": {"escuela": "ETSINF (Valencia)", "curso": "2026-27"},
     "Guia-dar-Alta-TFG-TFM-abril2019.pdf": {"escuela": "UPV", "curso": "2019"},
-    "Manual-Gestion-TFG-TFM-en-movilidad.pdf": {"escuela": "EPSA", "curso": "2025"},
+    "Manual-Gestion-TFG-TFM-en-movilidad.pdf": {"escuela": "EPSA (Alcoy)", "curso": "2025"},
     "PROCEDIMIENTO-TFG-INTEGRADO-Dobles-Grados-Alumnos.pdf": {"escuela": "UPV", "curso": "s/f"},
-    "Preguntas-frecuentes-TFG_TFMcurso26-27.pdf": {"escuela": "ETSINF", "curso": "2026-27"},
-    "ProcedimTribunal-y-Defensa-CAT_04_06_2020.pdf": {"escuela": "ETSINF", "curso": "2020"},
-    "Procedimiento-para-las-defensas-TFG-TFM-por-videoconferencia-via-Microdoft-TEAMS.pdf": {"escuela": "ETSINF", "curso": "s/f"},
+    "Preguntas-frecuentes-TFG_TFMcurso26-27.pdf": {"escuela": "ETSINF (Valencia)", "curso": "2026-27"},
+    "ProcedimTribunal-y-Defensa-CAT_04_06_2020.pdf": {"escuela": "ETSINF (Valencia)", "curso": "2020"},
+    "Procedimiento-para-las-defensas-TFG-TFM-por-videoconferencia-via-Microdoft-TEAMS.pdf": {"escuela": "ETSINF (Valencia)", "curso": "s/f"},
 }
 
 def split(text): #Agrupa párrafos hasta MAX_CHARS
